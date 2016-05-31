@@ -1,7 +1,21 @@
 ﻿// A '.tsx' file enables JSX support in the TypeScript compiler, 
 // for more information see the following page on the TypeScript wiki:
 // https://github.com/Microsoft/TypeScript/wiki/JSX
-
+/// <reference path="Utility.tsx"/>
+/// <reference path="Types.tsx"/>
+/// <reference path="Events.tsx"/>
+/// <reference path="Hubs.tsx"/>
+/// <reference path="UserInfo.tsx"/>
+/// <reference path="Message.tsx"/>
+/// <reference path="ChatGroupInfo.tsx"/>
+/// <reference path="CC98AuthorizationService.tsx"/>
+/// <reference path="CC98UserInfoService.tsx"/>
+/// <reference path="SignalRService.tsx"/>
+/// <reference path="SystemMessageService.tsx"/>
+/// <reference path="HomeController.tsx"/>
+/// <reference path="MainController.tsx"/>
+/// <reference path="ChatController.tsx"/>
+/// <reference path="ChatGroupController.tsx"/>
 module CC98Chat {
 
     console.debug('正在初始化 CC98 Chat 主模块...');

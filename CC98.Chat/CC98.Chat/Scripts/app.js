@@ -135,68 +135,95 @@ var CC98AuthorizationService = (function () {
     ;
     return CC98AuthorizationService;
 }());
-var CC98Chat;
-(function (CC98Chat) {
-    console.debug('正在初始化 CC98 Chat 主模块...');
-    var app = angular.module('cc98-chat', ['ngRoute', 'ngAnimate']);
-    CC98Chat.isPresentationMode = false;
-    function addController(name, ctor) {
-        var dependencies = [];
-        for (var _i = 2; _i < arguments.length; _i++) {
-            dependencies[_i - 2] = arguments[_i];
-        }
-        var realParams = dependencies;
-        realParams.push(ctor);
-        return app.controller(name, realParams);
-    }
-    function addService(name, ctor) {
-        var dependencies = [];
-        for (var _i = 2; _i < arguments.length; _i++) {
-            dependencies[_i - 2] = arguments[_i];
-        }
-        var realParams = dependencies;
-        realParams.push(ctor);
-        return app.service(name, realParams);
-    }
-    function config(configFunction) {
-        var dependencies = [];
+var Utility;
+(function (Utility) {
+    function stringFormat(format) {
+        var args = [];
         for (var _i = 1; _i < arguments.length; _i++) {
-            dependencies[_i - 1] = arguments[_i];
+            args[_i - 1] = arguments[_i];
         }
-        var realParams = dependencies;
-        realParams.push(configFunction);
-        return app.config(realParams);
+        return format.replace(/\{(\d+)\}/g, function (_, index) { return args[index]; });
     }
-    function configRoutes($routeProvider, $locationProvider) {
-        console.debug('正在配置应用程序路径 ...');
-        $locationProvider.html5Mode({
-            enabled: true,
-            requireBase: false
-        });
-        $routeProvider.when('/Home', {
-            templateUrl: 'home.html'
-        }).when('/Group/:groupName', {
-            templateUrl: 'chat.html'
-        }).when('/Auth', {
-            templateUrl: 'auth.html'
-        }).otherwise({
-            redirectTo: '/Home'
-        });
-        console.debug('路径配置完成 ...');
+    Utility.stringFormat = stringFormat;
+    function hasValue(str) {
+        return str !== undefined && str !== null && str !== '';
     }
-    config(configRoutes, '$routeProvider', '$locationProvider');
-    app.constant('$baseUri', 'http://v2.cc98.org/chat/');
-    app.constant('$cc98ClientId', '91b3ac76-0919-4fde-85d0-91ffde409a45');
-    addService('$systemMessage', SystemMessageService, '$rootScope');
-    addService('$signalR', SignalRService, '$rootScope', '$cc98Authorization');
-    addService('$cc98UserInfo', CC98UserInfoService, '$rootScope', '$http');
-    addService('$cc98Authorization', CC98AuthorizationService, '$baseUri', '$cc98ClientId', '$window', '$http', '$rootScope');
-    addController('MainController', MainController, '$rootScope', '$scope', '$timeout');
-    addController('HomeController', HomeController, '$scope', '$signalR', '$cc98Authorization');
-    addController('AuthController', AuthController, '$rootScope', '$location', '$window', '$cc98Authorization');
-    addController('ChatController', ChatController, '$routeParams', '$scope', '$rootScope', '$window', '$cc98Authorization', '$cc98UserInfo', '$signalR', '$systemMessage');
-    addController('CreateGroupController', CreateGroupController, '$window', '$location', '$scope', '$signalR', '$systemMessage');
-})(CC98Chat || (CC98Chat = {}));
+    Utility.hasValue = hasValue;
+    function isEmpty(obj) {
+        return Object.getOwnPropertyNames(obj).length === 0;
+    }
+    Utility.isEmpty = isEmpty;
+    function values(obj) {
+        var propertyNames = Object.getOwnPropertyNames(obj);
+        var result = new Array();
+        $.each(propertyNames, function (index, name) {
+            result.push(obj[name]);
+        });
+        return result;
+    }
+    Utility.values = values;
+    function combineUri(baseUri, path) {
+        if (baseUri[baseUri.length - 1] !== '/') {
+            baseUri += '/';
+        }
+        if (path[0] === '/') {
+            path = path.substring(1);
+        }
+        return baseUri + path;
+    }
+    Utility.combineUri = combineUri;
+    function deparam(query) {
+        var result = {};
+        var items = query.split('&');
+        $.each(items, function (i, str) {
+            var eqIndex = str.indexOf('=');
+            var name;
+            var value;
+            if (eqIndex !== -1) {
+                name = decodeURIComponent(str.substring(0, eqIndex));
+                value = decodeURIComponent(str.substring(eqIndex + 1));
+            }
+            else {
+                name = decodeURIComponent(str);
+                value = null;
+            }
+            result[name] = value;
+        });
+        return result;
+    }
+    Utility.deparam = deparam;
+})(Utility || (Utility = {}));
+var Events;
+(function (Events) {
+    Events.logOnEnd = 'logOnEnd';
+    Events.serverConnectEnd = 'serverConnectEnd';
+    Events.userInfoUpdated = 'userInfoUpdated';
+    Events.systemMessage = 'systemMessage';
+    Events.togglePresentationMode = 'togglePresentationMode';
+    Events.setPresentationData = 'setPresentationData';
+})(Events || (Events = {}));
+var UserInfo = (function () {
+    function UserInfo() {
+    }
+    return UserInfo;
+}());
+var Message = (function () {
+    function Message() {
+    }
+    return Message;
+}());
+var MessageType;
+(function (MessageType) {
+    MessageType[MessageType["Others"] = 0] = "Others";
+    MessageType[MessageType["Me"] = 1] = "Me";
+    MessageType[MessageType["System"] = 2] = "System";
+})(MessageType || (MessageType = {}));
+var ChatGroupInfo = (function () {
+    function ChatGroupInfo() {
+        this.members = new Array();
+    }
+    return ChatGroupInfo;
+}());
 var CC98UserInfoService = (function () {
     function CC98UserInfoService($rootScope, $http) {
         this.$rootScope = $rootScope;
@@ -232,6 +259,219 @@ var CC98UserInfoService = (function () {
         return item;
     };
     return CC98UserInfoService;
+}());
+var SignalRService = (function () {
+    function SignalRService($rootScope, $cc98Authorization) {
+        var _this = this;
+        this.isConnectedInternal = false;
+        console.debug('正在初始化 SignalR 服务 ...');
+        this.$rootScope = $rootScope;
+        this.$cc98Authorizaion = $cc98Authorization;
+        this.signalR = $.connection;
+        this.initializeHub();
+        this.$rootScope.$on(Events.logOnEnd, function () { return _this.handleLogOnEvent(); });
+    }
+    SignalRService.prototype.handleLogOnEvent = function () {
+        var userInfo = this.$cc98Authorizaion.myInfo;
+        if (this.$cc98Authorizaion.isLoggedOn) {
+        }
+    };
+    ;
+    Object.defineProperty(SignalRService.prototype, "messageHub", {
+        get: function () {
+            return this.signalR.messageHub;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(SignalRService.prototype, "isConnected", {
+        get: function () {
+            return this.isConnectedInternal;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    SignalRService.prototype.setUserAuthorization = function () {
+        if (this.$cc98Authorizaion.isLoggedOn) {
+            this.signalR.hub.qs = {
+                'Authorization': Utility.stringFormat('{0} {1}', this.$cc98Authorizaion.tokenType, this.$cc98Authorizaion.accessToken)
+            };
+        }
+        else {
+            this.signalR.hub.qs = {};
+        }
+    };
+    ;
+    SignalRService.prototype.initializeHub = function () {
+        var _this = this;
+        this.signalR.hub.url = "https://api.cc98.org/signalR";
+        this.signalR.hub.disconnected(function () { return _this.handleDisconnnected(); });
+    };
+    SignalRService.prototype.start = function () {
+        var _this = this;
+        if (this.signalR.hub.state !== 4) {
+            this.signalR.hub.stop();
+        }
+        this.setUserAuthorization();
+        $.connection.hub.start().done(function () {
+            console.debug('已经连接到服务器。');
+            _this.isConnectedInternal = true;
+            _this.$rootScope.$broadcast(Events.serverConnectEnd, true);
+        }).fail(function () {
+            console.debug('连接服务器失败');
+            _this.isConnectedInternal = false;
+            _this.$rootScope.$broadcast(Events.serverConnectEnd, false);
+        });
+    };
+    SignalRService.prototype.handleDisconnnected = function () {
+        this.$rootScope.$broadcast('serverDisconnected');
+    };
+    SignalRService.prototype.run = function (fn) {
+        if (this.isConnected) {
+            fn();
+        }
+        else {
+            this.$rootScope.$on(Events.serverConnectEnd, function (isConnected) {
+                if (isConnected) {
+                    fn();
+                }
+            });
+            this.start();
+        }
+    };
+    ;
+    return SignalRService;
+}());
+;
+var SystemMessageService = (function () {
+    function SystemMessageService($rootScope) {
+        console.debug('正在初始化消息服务 ...');
+        this.$rootScope = $rootScope;
+    }
+    SystemMessageService.prototype.showMessage = function (message) {
+        console.log(Utility.stringFormat('准备显示消息: {0}', message));
+        this.$rootScope.$broadcast(Events.systemMessage, message);
+    };
+    return SystemMessageService;
+}());
+;
+var HomeController = (function () {
+    function HomeController($scope, $signalR, $cc98Authorization) {
+        var _this = this;
+        this.isLoggedOn = false;
+        this.groups = {};
+        console.debug('正在进入首页控制器 ...');
+        this.$scope = $scope;
+        this.$signalR = $signalR;
+        this.$cc98Authorization = $cc98Authorization;
+        this.attachHubEvents();
+        this.$scope.$on(Events.logOnEnd, function () { return _this.handleLogOnEvent(); });
+        this.$scope.$on(Events.serverConnectEnd, function () { return _this.handleServerConnectEnd(); });
+        if (!this.$cc98Authorization.tryAutoLogOn()) {
+            $signalR.start();
+        }
+    }
+    HomeController.prototype.handleServerConnectEnd = function () {
+        console.debug('检测到服务器连接状态更改');
+        this.syncGroups();
+    };
+    HomeController.prototype.handleLogOnEvent = function () {
+        this.isLoggedOn = this.$cc98Authorization.isLoggedOn;
+        this.$signalR.start();
+    };
+    HomeController.prototype.logOn = function () {
+        this.$cc98Authorization.logOn('/Home');
+    };
+    HomeController.prototype.getDisplayTitle = function (group) {
+        if (Utility.hasValue(group.title)) {
+            return group.title;
+        }
+        else {
+            return group.name;
+        }
+    };
+    ;
+    Object.defineProperty(HomeController.prototype, "hasGroups", {
+        get: function () {
+            return !Utility.isEmpty(this.groups);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    HomeController.prototype.syncGroups = function () {
+        var _this = this;
+        this.$signalR.messageHub.server.getGroups().done(function (data) {
+            console.info('成功获取组信息，数量 = %d', data.length);
+            var newGroups = {};
+            $.each(data, function (index, value) {
+                newGroups[value.name] = value;
+            });
+            _this.groups = newGroups;
+            _this.$scope.$apply('groups');
+            _this.$scope.$apply('hasGroups');
+        }).fail(function () {
+            console.warn('获取组信息时发生错误。');
+        });
+    };
+    ;
+    HomeController.prototype.handleGroupCreated = function (group) {
+        console.debug('检测到创建新组');
+        this.groups[group.name] = group;
+        this.$scope.$apply('groups');
+        this.$scope.$apply('hasGroups');
+    };
+    ;
+    HomeController.prototype.handleGroupDestroyed = function (groupName) {
+        console.debug('检测到组销毁');
+        delete this.groups[groupName];
+        this.$scope.$apply('groups');
+        this.$scope.$apply('hasGroups');
+    };
+    ;
+    HomeController.prototype.attachHubEvents = function () {
+        var _this = this;
+        this.$signalR.messageHub.client.groupCreated = function (group) { return _this.handleGroupCreated(group); };
+        this.$signalR.messageHub.client.groupDestroyed = function (groupName) { return _this.handleGroupDestroyed(groupName); };
+    };
+    ;
+    return HomeController;
+}());
+var MainController = (function () {
+    function MainController($rootScope, $scope, $timeout) {
+        var _this = this;
+        this.isPresentationMode = false;
+        this.groupName = null;
+        this.title = null;
+        this.errors = new Array();
+        this.$rootScope = $rootScope;
+        this.$scope = $scope;
+        this.$timeout = $timeout;
+        this.$rootScope.$on(Events.systemMessage, function (event, message) { return _this.handleNewSystemMessage(message); });
+        this.$rootScope.$on(Events.togglePresentationMode, function (event, isPresentationMode) { return _this.handleTogglePresentationModeEvent(isPresentationMode); });
+        this.$rootScope.$on(Events.setPresentationData, function (event, groupName, title) {
+            _this.groupName = groupName;
+            _this.title = title;
+        });
+        this.updateUI();
+    }
+    MainController.prototype.handleTogglePresentationModeEvent = function (isPresentationMode) {
+        this.isPresentationMode = isPresentationMode;
+        this.$scope.$apply('isPresentationMode');
+        this.updateUI();
+    };
+    MainController.prototype.updateUI = function () {
+    };
+    ;
+    MainController.prototype.handleNewSystemMessage = function (message) {
+        var _this = this;
+        this.errors.push(message);
+        this.$scope.$apply('errors');
+        this.$timeout(function () {
+            _this.errors.splice(0, 1);
+        }, 2000, true);
+    };
+    ;
+    return MainController;
 }());
 var ChatController = (function () {
     function ChatController($routeParams, $scope, $rootScope, $window, $cc98Authorization, $cc98UserInfo, $signalR, $systemMessage) {
@@ -517,306 +757,66 @@ var CreateGroupController = (function () {
     };
     return CreateGroupController;
 }());
-var ChatGroupInfo = (function () {
-    function ChatGroupInfo() {
-        this.members = new Array();
+var CC98Chat;
+(function (CC98Chat) {
+    console.debug('正在初始化 CC98 Chat 主模块...');
+    var app = angular.module('cc98-chat', ['ngRoute', 'ngAnimate']);
+    CC98Chat.isPresentationMode = false;
+    function addController(name, ctor) {
+        var dependencies = [];
+        for (var _i = 2; _i < arguments.length; _i++) {
+            dependencies[_i - 2] = arguments[_i];
+        }
+        var realParams = dependencies;
+        realParams.push(ctor);
+        return app.controller(name, realParams);
     }
-    return ChatGroupInfo;
-}());
-var Events;
-(function (Events) {
-    Events.logOnEnd = 'logOnEnd';
-    Events.serverConnectEnd = 'serverConnectEnd';
-    Events.userInfoUpdated = 'userInfoUpdated';
-    Events.systemMessage = 'systemMessage';
-    Events.togglePresentationMode = 'togglePresentationMode';
-    Events.setPresentationData = 'setPresentationData';
-})(Events || (Events = {}));
-var HomeController = (function () {
-    function HomeController($scope, $signalR, $cc98Authorization) {
-        var _this = this;
-        this.isLoggedOn = false;
-        this.groups = {};
-        console.debug('正在进入首页控制器 ...');
-        this.$scope = $scope;
-        this.$signalR = $signalR;
-        this.$cc98Authorization = $cc98Authorization;
-        this.attachHubEvents();
-        this.$scope.$on(Events.logOnEnd, function () { return _this.handleLogOnEvent(); });
-        this.$scope.$on(Events.serverConnectEnd, function () { return _this.handleServerConnectEnd(); });
-        if (!this.$cc98Authorization.tryAutoLogOn()) {
-            $signalR.start();
+    function addService(name, ctor) {
+        var dependencies = [];
+        for (var _i = 2; _i < arguments.length; _i++) {
+            dependencies[_i - 2] = arguments[_i];
         }
+        var realParams = dependencies;
+        realParams.push(ctor);
+        return app.service(name, realParams);
     }
-    HomeController.prototype.handleServerConnectEnd = function () {
-        console.debug('检测到服务器连接状态更改');
-        this.syncGroups();
-    };
-    HomeController.prototype.handleLogOnEvent = function () {
-        this.isLoggedOn = this.$cc98Authorization.isLoggedOn;
-        this.$signalR.start();
-    };
-    HomeController.prototype.logOn = function () {
-        this.$cc98Authorization.logOn('/Home');
-    };
-    HomeController.prototype.getDisplayTitle = function (group) {
-        if (Utility.hasValue(group.title)) {
-            return group.title;
-        }
-        else {
-            return group.name;
-        }
-    };
-    ;
-    Object.defineProperty(HomeController.prototype, "hasGroups", {
-        get: function () {
-            return !Utility.isEmpty(this.groups);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    HomeController.prototype.syncGroups = function () {
-        var _this = this;
-        this.$signalR.messageHub.server.getGroups().done(function (data) {
-            console.info('成功获取组信息，数量 = %d', data.length);
-            var newGroups = {};
-            $.each(data, function (index, value) {
-                newGroups[value.name] = value;
-            });
-            _this.groups = newGroups;
-            _this.$scope.$apply('groups');
-            _this.$scope.$apply('hasGroups');
-        }).fail(function () {
-            console.warn('获取组信息时发生错误。');
-        });
-    };
-    ;
-    HomeController.prototype.handleGroupCreated = function (group) {
-        console.debug('检测到创建新组');
-        this.groups[group.name] = group;
-        this.$scope.$apply('groups');
-        this.$scope.$apply('hasGroups');
-    };
-    ;
-    HomeController.prototype.handleGroupDestroyed = function (groupName) {
-        console.debug('检测到组销毁');
-        delete this.groups[groupName];
-        this.$scope.$apply('groups');
-        this.$scope.$apply('hasGroups');
-    };
-    ;
-    HomeController.prototype.attachHubEvents = function () {
-        var _this = this;
-        this.$signalR.messageHub.client.groupCreated = function (group) { return _this.handleGroupCreated(group); };
-        this.$signalR.messageHub.client.groupDestroyed = function (groupName) { return _this.handleGroupDestroyed(groupName); };
-    };
-    ;
-    return HomeController;
-}());
-var MainController = (function () {
-    function MainController($rootScope, $scope, $timeout) {
-        var _this = this;
-        this.isPresentationMode = false;
-        this.groupName = null;
-        this.title = null;
-        this.errors = new Array();
-        this.$rootScope = $rootScope;
-        this.$scope = $scope;
-        this.$timeout = $timeout;
-        this.$rootScope.$on(Events.systemMessage, function (event, message) { return _this.handleNewSystemMessage(message); });
-        this.$rootScope.$on(Events.togglePresentationMode, function (event, isPresentationMode) { return _this.handleTogglePresentationModeEvent(isPresentationMode); });
-        this.$rootScope.$on(Events.setPresentationData, function (event, groupName, title) {
-            _this.groupName = groupName;
-            _this.title = title;
-        });
-        this.updateUI();
-    }
-    MainController.prototype.handleTogglePresentationModeEvent = function (isPresentationMode) {
-        this.isPresentationMode = isPresentationMode;
-        this.$scope.$apply('isPresentationMode');
-        this.updateUI();
-    };
-    MainController.prototype.updateUI = function () {
-    };
-    ;
-    MainController.prototype.handleNewSystemMessage = function (message) {
-        var _this = this;
-        this.errors.push(message);
-        this.$scope.$apply('errors');
-        this.$timeout(function () {
-            _this.errors.splice(0, 1);
-        }, 2000, true);
-    };
-    ;
-    return MainController;
-}());
-var Message = (function () {
-    function Message() {
-    }
-    return Message;
-}());
-var MessageType;
-(function (MessageType) {
-    MessageType[MessageType["Others"] = 0] = "Others";
-    MessageType[MessageType["Me"] = 1] = "Me";
-    MessageType[MessageType["System"] = 2] = "System";
-})(MessageType || (MessageType = {}));
-var SignalRService = (function () {
-    function SignalRService($rootScope, $cc98Authorization) {
-        var _this = this;
-        this.isConnectedInternal = false;
-        console.debug('正在初始化 SignalR 服务 ...');
-        this.$rootScope = $rootScope;
-        this.$cc98Authorizaion = $cc98Authorization;
-        this.signalR = $.connection;
-        this.initializeHub();
-        this.$rootScope.$on(Events.logOnEnd, function () { return _this.handleLogOnEvent(); });
-    }
-    SignalRService.prototype.handleLogOnEvent = function () {
-        var userInfo = this.$cc98Authorizaion.myInfo;
-        if (this.$cc98Authorizaion.isLoggedOn) {
-        }
-    };
-    ;
-    Object.defineProperty(SignalRService.prototype, "messageHub", {
-        get: function () {
-            return this.signalR.messageHub;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(SignalRService.prototype, "isConnected", {
-        get: function () {
-            return this.isConnectedInternal;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    SignalRService.prototype.setUserAuthorization = function () {
-        if (this.$cc98Authorizaion.isLoggedOn) {
-            this.signalR.hub.qs = {
-                'Authorization': Utility.stringFormat('{0} {1}', this.$cc98Authorizaion.tokenType, this.$cc98Authorizaion.accessToken)
-            };
-        }
-        else {
-            this.signalR.hub.qs = {};
-        }
-    };
-    ;
-    SignalRService.prototype.initializeHub = function () {
-        var _this = this;
-        this.signalR.hub.url = "https://api.cc98.org/signalR";
-        this.signalR.hub.disconnected(function () { return _this.handleDisconnnected(); });
-    };
-    SignalRService.prototype.start = function () {
-        var _this = this;
-        if (this.signalR.hub.state !== 4) {
-            this.signalR.hub.stop();
-        }
-        this.setUserAuthorization();
-        $.connection.hub.start().done(function () {
-            console.debug('已经连接到服务器。');
-            _this.isConnectedInternal = true;
-            _this.$rootScope.$broadcast(Events.serverConnectEnd, true);
-        }).fail(function () {
-            console.debug('连接服务器失败');
-            _this.isConnectedInternal = false;
-            _this.$rootScope.$broadcast(Events.serverConnectEnd, false);
-        });
-    };
-    SignalRService.prototype.handleDisconnnected = function () {
-        this.$rootScope.$broadcast('serverDisconnected');
-    };
-    SignalRService.prototype.run = function (fn) {
-        if (this.isConnected) {
-            fn();
-        }
-        else {
-            this.$rootScope.$on(Events.serverConnectEnd, function (isConnected) {
-                if (isConnected) {
-                    fn();
-                }
-            });
-            this.start();
-        }
-    };
-    ;
-    return SignalRService;
-}());
-;
-var SystemMessageService = (function () {
-    function SystemMessageService($rootScope) {
-        console.debug('正在初始化消息服务 ...');
-        this.$rootScope = $rootScope;
-    }
-    SystemMessageService.prototype.showMessage = function (message) {
-        console.log(Utility.stringFormat('准备显示消息: {0}', message));
-        this.$rootScope.$broadcast(Events.systemMessage, message);
-    };
-    return SystemMessageService;
-}());
-;
-var UserInfo = (function () {
-    function UserInfo() {
-    }
-    return UserInfo;
-}());
-var Utility;
-(function (Utility) {
-    function stringFormat(format) {
-        var args = [];
+    function config(configFunction) {
+        var dependencies = [];
         for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
+            dependencies[_i - 1] = arguments[_i];
         }
-        return format.replace(/\{(\d+)\}/g, function (_, index) { return args[index]; });
+        var realParams = dependencies;
+        realParams.push(configFunction);
+        return app.config(realParams);
     }
-    Utility.stringFormat = stringFormat;
-    function hasValue(str) {
-        return str !== undefined && str !== null && str !== '';
-    }
-    Utility.hasValue = hasValue;
-    function isEmpty(obj) {
-        return Object.getOwnPropertyNames(obj).length === 0;
-    }
-    Utility.isEmpty = isEmpty;
-    function values(obj) {
-        var propertyNames = Object.getOwnPropertyNames(obj);
-        var result = new Array();
-        $.each(propertyNames, function (index, name) {
-            result.push(obj[name]);
+    function configRoutes($routeProvider, $locationProvider) {
+        console.debug('正在配置应用程序路径 ...');
+        $locationProvider.html5Mode({
+            enabled: true,
+            requireBase: false
         });
-        return result;
-    }
-    Utility.values = values;
-    function combineUri(baseUri, path) {
-        if (baseUri[baseUri.length - 1] !== '/') {
-            baseUri += '/';
-        }
-        if (path[0] === '/') {
-            path = path.substring(1);
-        }
-        return baseUri + path;
-    }
-    Utility.combineUri = combineUri;
-    function deparam(query) {
-        var result = {};
-        var items = query.split('&');
-        $.each(items, function (i, str) {
-            var eqIndex = str.indexOf('=');
-            var name;
-            var value;
-            if (eqIndex !== -1) {
-                name = decodeURIComponent(str.substring(0, eqIndex));
-                value = decodeURIComponent(str.substring(eqIndex + 1));
-            }
-            else {
-                name = decodeURIComponent(str);
-                value = null;
-            }
-            result[name] = value;
+        $routeProvider.when('/Home', {
+            templateUrl: 'home.html'
+        }).when('/Group/:groupName', {
+            templateUrl: 'chat.html'
+        }).when('/Auth', {
+            templateUrl: 'auth.html'
+        }).otherwise({
+            redirectTo: '/Home'
         });
-        return result;
+        console.debug('路径配置完成 ...');
     }
-    Utility.deparam = deparam;
-})(Utility || (Utility = {}));
+    config(configRoutes, '$routeProvider', '$locationProvider');
+    app.constant('$baseUri', 'http://v2.cc98.org/chat/');
+    app.constant('$cc98ClientId', '91b3ac76-0919-4fde-85d0-91ffde409a45');
+    addService('$systemMessage', SystemMessageService, '$rootScope');
+    addService('$signalR', SignalRService, '$rootScope', '$cc98Authorization');
+    addService('$cc98UserInfo', CC98UserInfoService, '$rootScope', '$http');
+    addService('$cc98Authorization', CC98AuthorizationService, '$baseUri', '$cc98ClientId', '$window', '$http', '$rootScope');
+    addController('MainController', MainController, '$rootScope', '$scope', '$timeout');
+    addController('HomeController', HomeController, '$scope', '$signalR', '$cc98Authorization');
+    addController('AuthController', AuthController, '$rootScope', '$location', '$window', '$cc98Authorization');
+    addController('ChatController', ChatController, '$routeParams', '$scope', '$rootScope', '$window', '$cc98Authorization', '$cc98UserInfo', '$signalR', '$systemMessage');
+    addController('CreateGroupController', CreateGroupController, '$window', '$location', '$scope', '$signalR', '$systemMessage');
+})(CC98Chat || (CC98Chat = {}));
 //# sourceMappingURL=app.js.map
