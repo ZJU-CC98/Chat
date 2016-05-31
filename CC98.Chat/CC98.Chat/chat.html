@@ -1,0 +1,208 @@
+﻿<!-- 用户信息条 -->
+
+<div ng-controller="ChatController as chat">
+
+	<div ng-hide="chat.isPresentationMode">
+
+		<h2 class="text-center">{{chat.displayTitle}}</h2>
+
+		<br />
+
+		<p class="text-center">{{chat.chatGroupInfo.description}}</p>
+	</div>
+
+
+
+
+
+	<div id="user-list-panel" ng-show="!chat.isPresentationMode">
+
+		<div class="row">
+			<div class="col-md-12">
+				<div class="panel panel-default">
+					<div class="panel-heading" role="tab" id="user-panel-heading">
+						<h4 class="panel-title">
+							<a data-toggle="collapse" href="#user-panel-body" aria-controls="user-panel-body">
+								在线用户列表
+							</a>
+						</h4>
+					</div>
+					<div id="user-panel-body" class="panel-collapse collapse" role="tabpanel" aria-labelledby="user-panel-heading">
+						<div class="panel-body">
+
+							<div id="no-members-panel" ng-hide="chat.hasMembers">
+								<p class="text-center text-muted">目前没有人在讨论组，快邀请好朋友一起来聊天吧！</p>
+							</div>
+
+							<div id="has-members-panel" ng-show="chat.hasMembers">
+
+								<div class="row">
+									<div class="col-md-2 col-sm-4 col-xs-6" ng-repeat="user in chat.members">
+										<div class="thumbnail">
+											<img ng-src="{{user.portraitUrl}}" title="{{user.name}}" alt="用户头像" class="img-rounded img-responsive" style="max-height: 120px; max-width: 120px;" />
+										</div>
+									</div>
+
+								</div>
+
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<hr />
+
+	<!-- 消息面板 -->
+	<div id="message-container">
+
+		<div class="no-message-panel" ng-show="chat.messages.length === 0">
+			<p ng-show="chat.isPresentationMode" style="font-size: 36px; color: yellow;" class="text-center text-muted">目前还没有人发言，大家快踊跃发言吧！</p>
+			<p ng-hide="chat.isPresentationMode" class="text-center text-muted">在你进入聊天室之后还没有新的消息。试着和大家说些什么吧！</p>
+		</div>
+
+		<div class="has-message-panel" ng-show="chat.messages.length !== 0">
+			<div ng-repeat="message in chat.messages" class="animate-listing" ng-class="{true:'large-message-listing', false:'message-listing'}[chat.isPresentationMode]">
+
+				<div ng-class="{0: 'panel panel-default', 1: 'panel panel-primary' }[message.messageType]">
+					<div class="panel-body">
+
+						<div ng-show="chat.isPresentationMode">
+							<div class="media">
+								<div class="media-left">
+									<a ng-href="http://www.cc98.org/dispuser.asp?id={{message.user.id}}">
+										<img class="media-object img-responsive img-rounded" ng-src="{{message.user.portraitUrl}}" style="max-height: 80px; max-width: 80px;" alt="用户头像">
+									</a>
+								</div>
+								<div class="media-body" ng-class="{0: '', 1: 'text-primary'}[message.messageType]" style="color: darkblue;">
+									<span>
+										<strong class="media-heading" style="font-size: 24px;">{{message.user.name}}</strong>
+									</span>
+									<p style="font-size: 40px; word-wrap: break-word; word-break: break-all;">{{message.content}}</p>
+								</div>
+							</div>
+						</div>
+
+						<div ng-hide="chat.isPresentationMode">
+
+							<div class="media">
+								<div class="media-left">
+									<a ng-href="http://www.cc98.org/dispuser.asp?id={{message.user.id}}">
+										<img class="media-object" ng-src="{{message.user.portraitUrl}}" style="max-height: 40px; max-width: 40px;" alt="用户头像">
+									</a>
+								</div>
+								<div class="media-body" ng-class="{0: '', 1: 'text-primary'}[message.messageType]">
+									<span>
+										<strong class="media-heading">{{message.user.name}}</strong>
+										<span class="text-muted">{{message.time | date : 'medium'}}</span>
+									</span>
+									<p style="word-wrap: break-word; word-break: break-all;">{{message.content}}</p>
+								</div>
+							</div>
+						</div>
+
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+	<div id="action-panel" ng-show="!chat.isPresentationMode">
+
+		<hr />
+		<div id="online-panel" ng-show="chat.isLoggedOn">
+			<form id="send-message-form" ng-submit="chat.sendNewMessage()">
+
+				<div class="hidden-xs hidden-sm">
+					<div class="media">
+						<div class="media-left">
+							<a href="#">
+								<img class="media-object img-rounded" style="max-height: 120px; max-width: 120px;" ng-src="{{chat.myUserInfo.portraitUrl}}" alt="你的头像">
+							</a>
+						</div>
+						<div class="media-body">
+							<textarea style="height: 120px;" placeholder="对大家说些什么吧" ng-model="chat.newMessage" required="required" class="form-control"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="hidden-md hidden-lg">
+					<textarea rows="3" placeholder="对大家说些什么吧" ng-model="chat.newMessage" required="required" class="form-control"></textarea>
+				</div>
+
+				<hr />
+				<button id="send-button" class="btn btn-default btn-primary" type="submit">发送消息</button>
+				<button id="save-button" class="btn btn-default hidden-sm hidden-xs" type="button" ng-click="chat.save();">保存消息记录</button>
+				<button type="button" class="btn btn-default hidden-sm hidden-xs" ng-click="chat.togglePresentationMode()">切换到演示模式</button>
+				<button ng-show="chat.isAdmin" type="button" class="btn btn-default btn-danger hidden-sm hidden-xs" data-toggle="modal" data-target="#delete-group-modal">关闭讨论组</button>
+
+
+			</form>
+
+		</div>
+
+		<div id="offline-panel" ng-show="!chat.isLoggedOn">
+
+			<p class="text-center text-info">
+				你现在还没有登录。你可以观看讨论组的话题，但必须登录才能在讨论组中发言。单击<q>立即登录</q>按钮以执行登录操作。
+				<hr />
+				<button type="button" class="btn btn-default btn-primary" ng-click="chat.logOn();">立即登录</button>
+				<button type="button" class="btn btn-default hidden-sm hidden-xs" ng-click="chat.save();">保存消息记录</button>
+				<button type="button" class="btn btn-default hidden-sm hidden-xs" ng-click="chat.togglePresentationMode()">切换到演示模式</button>
+		</div>
+	</div>
+
+
+	<form ng-submit="chat.closeGroup()">
+
+		<div class="modal fade" id="delete-group-modal">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">关闭讨论组</h4>
+					</div>
+					<div class="modal-body">
+
+						<p>如果你关闭讨论组，它将从系统讨论组列表中删除，所有已经加入讨论组的用户也将无法继续交流。这个操作是不可逆的。如果你确定要执行这个操作，请单击下面的<q>关闭讨论组</q>按钮。</p>
+
+
+
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-danger">关闭讨论组</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消操作</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+	</form>
+
+
+</div>
+
+
+
+
+<script type="text/javascript" language="javascript">
+
+	$(document).ready(function () {
+
+		$('#input-text').keydown(function (e) {
+			if (e.which === 13 && e.ctrlKey) {
+				$('#send-button').click();
+			}
+		});
+	});
+
+</script>

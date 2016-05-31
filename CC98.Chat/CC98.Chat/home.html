@@ -1,0 +1,113 @@
+﻿<div ng-controller="HomeController as home">
+
+	<h2>讨论组列表</h2>
+
+	<div id="has-group-panel" ng-show="home.hasGroups">
+
+		<table class="table table-striped table-hover">
+
+			<thead>
+				<tr>
+					<th>名称</th>
+					<th>管理员</th>
+					<th>成员</th>
+				</tr>
+			</thead>
+
+			<tbody>
+
+				<tr ng-repeat="group in home.groups" class="animate-listing group-listing">
+					<th>
+						<a ng-href="Group/{{group.name}}" target="_blank">{{home.getDisplayTitle(group)}}</a>
+					</th>
+					<td>
+						<a ng-href="http://www.cc98.org/dispuser.asp?name={{group.managerName}}" target="_blank">{{group.managerName}}</a>
+					</td>
+					<td>
+						成员：{{group.members.length}} 人，来宾：{{group.guestCount}} 人
+					</td>
+				</tr>
+
+			</tbody>
+
+		</table>
+
+	</div>
+
+	<div id="no-group-panel" ng-hide="home.hasGroups">
+		<hr/>
+		<p class="text-center text-muted">目前还没有人创建讨论组</p>
+		<hr/>
+	</div>
+
+	<p class="text-info">讨论组列表是自动更新的，你并不需要刷新网页。如果因为网络原因无法自动更新列表，你可以单击这里 <a href="#" ng-click="home.syncGroups()">手动更新</a></p>
+
+	<hr />
+
+	<div id="create-group-panel">
+
+		<div id="create-group-no-log-on-panel" ng-hide="home.isLoggedOn">
+
+			<p>
+				你可以浏览所有讨论组中的发言。如果你希望创建属于自己的讨论组或者参与发言，请单击下面的按钮登录。
+			</p>
+			<div>
+				<button type="button" class="btn btn-primary" ng-click="home.logOn();">立即登录</button>
+			</div>
+
+		</div>
+
+		<div id="create-group-log-on-panel" ng-show="home.isLoggedOn">
+			<p>如果你想要创建新的讨论组，请单击下面的按钮。</p>
+			<button type="button" class="btn btn-default btn-primary" data-toggle="modal" data-target="#craete-group-modal">创建新的讨论组</button>
+		</div>
+
+	</div>
+
+</div>
+
+<div id="create-group-root" ng-controller="CreateGroupController as group">
+
+	<form ng-submit="group.create()">
+
+		<div class="modal fade" id="craete-group-modal">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title">创建讨论组</h4>
+					</div>
+					<div class="modal-body">
+
+						<p>你将成为新创建的讨论组的管理员。你可以随时关闭讨论组。如果讨论组长时间没有人发言，则系统也将在一段时间后自动关闭讨论组。</p>
+
+						<div>
+							<div class="form-group">
+								<label for="" class="control-label">讨论组 ID</label>
+								<input type="text" required="required" class="form-control" ng-model="group.name" />
+								<p class="help-block">讨论组 ID 将会作为讨论组的访问地址的一部分。虽然可以使用任何文字，但建议你只使用英文字母、数字和横线（-）构成讨论组 ID。</p>
+							</div>
+							<div class="form-group">
+								<label for="" class="control-label">讨论组标题</label>
+								<input type="text" class="form-control" ng-model="group.title" />
+								<p class="help-block">讨论组标题将会作为页面的名称，并显示在讨论组主页。请使用描述性的文字作为讨论组标题。如果你不提供标题，则将使用讨论组名称作为标题。</p>
+							</div>
+							<div class="form-group">
+								<label for="" class="control-label">讨论组描述</label>
+								<textarea rows="5" class="form-control" ng-model="group.description"></textarea>
+								<p class="help-block">可选的对讨论组的说明，将会显示在讨论组主页。</p>
+							</div>
+						</div>
+
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary">创建讨论组</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">关闭窗口</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+
+	</form>
+
+</div>
