@@ -7,6 +7,7 @@ class SignalRService {
 
     private $rootScope: ng.IRootScopeService;
     private $cc98Authorizaion: CC98AuthorizationService;
+    private $apiUri : string;
 
     /**
      * SignalR 服务对象。
@@ -18,9 +19,11 @@ class SignalRService {
      */
     private isConnectedInternal = false;
 
-    public constructor($rootScope, $cc98Authorization) {
+    public constructor($apiUri, $rootScope, $cc98Authorization) {
 
         console.debug('正在初始化 SignalR 服务 ...');
+
+        this.$apiUri = $apiUri;
         this.$rootScope = $rootScope;
         this.$cc98Authorizaion = $cc98Authorization;
         this.signalR = $.connection;
@@ -46,14 +49,14 @@ class SignalRService {
      * 获取消息集线器对象。
      * @returns {} 
      */
-    public get messageHub() {
+    get messageHub() {
         return this.signalR.messageHub;
     }
 
     /**
      * 获取一个值，指示当前系统是否已经连接到服务器。
      */
-    public get isConnected() {
+    get isConnected() {
         return this.isConnectedInternal;
     }
 
@@ -75,7 +78,7 @@ class SignalRService {
      */
     private initializeHub() {
         // API 地址
-        this.signalR.hub.url = "https://api.cc98.org/signalR";
+        this.signalR.hub.url = Utility.combineUri(this.$apiUri, '/signalR');
         // 绑定断开事件
         this.signalR.hub.disconnected(() => this.handleDisconnnected());
     }
@@ -83,7 +86,7 @@ class SignalRService {
     /**
      * 启动 SignalR 连接。
      */
-    public start() {
+    start() {
 
         // 如果不是断开状态，则强制断开
         if (this.signalR.hub.state !== SignalR.ConnectionState.Disconnected) {

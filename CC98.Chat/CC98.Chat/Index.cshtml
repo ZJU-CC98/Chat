@@ -1,0 +1,122 @@
+﻿@{
+    var siteUri = Request.ServerVariables["SiteUrl"] ?? Request.Url.GetLeftPart(UriPartial.Authority) + Request.ApplicationPath;
+    var loginUri = Request.ServerVariables["LoginUrl"] ?? "https://login.cc98.org";
+    var apiUri = Request.ServerVariables["ApiUrl"] ?? "https://api.cc98.org";
+
+    var signalRHubs = new Uri(new Uri(apiUri), "/signalr/hubs").ToString();
+}
+
+<!DOCTYPE html>
+<html ng-app="cc98-chat" data-site-uri="@siteUri" data-api-uri="@apiUri" data-logon-uri="@loginUri">
+<head>
+
+    <base href="@VirtualPathUtility.AppendTrailingSlash(Request.ApplicationPath)" />
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>CC98 Chat（内测版）</title>
+
+    <!-- 核心库 -->
+    <script type="text/javascript" language="javascript" src="Scripts/jquery-2.2.3.min.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/bootstrap.min.js"></script>
+
+    <!-- Angular JS -->
+    <script type="text/javascript" language="javascript" src="Scripts/angular.min.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/angular-route.min.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/angular-animate.min.js"></script>
+
+    <!-- 简体中文本地化 -->
+    <script type="text/javascript" language="javascript" src="Scripts/i18n/angular-locale_zh-hans-cn.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/i18n/angular-locale_zh-hans.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/i18n/angular-locale_zh-cn.js"></script>
+    <script type="text/javascript" language="javascript" src="Scripts/i18n/angular-locale_zh.js"></script>
+
+
+    <!-- SignalR 代理 -->
+    <script type="text/javascript" language="javascript" src="@signalRHubs"></script>
+
+    <!-- 应用程序脚本 -->
+    <script type="text/javascript" language="javascript" src="Scripts/app.min.js"></script>
+    <!-- 样式表 -->
+    <link type="text/css" rel="stylesheet" href="Content/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="Content/Site.min.css" />
+
+</head>
+<body ng-controller="MainController as main" ng-class="{dark : main.isPresentationMode}">
+
+
+    <header>
+        <div id="title-panel" ng-show="!main.isPresentationMode">
+            <div class="page-header">
+                <h1 class="text-center lead">
+                    <span>CC98 Chat - 内测版</span>
+                    <br />
+                    <small>
+                        Powered by ASP.NET SignalR&reg; <a href="#" class="btn btn-link visible-sm-inline visible-xs-inline" onclick="closeHeader();">关闭标头部分</a>
+                    </small>
+                </h1>
+            </div>
+        </div>
+
+        <div ng-show="main.isPresentationMode">
+            <div style="text-align: center;">
+                <h1 style="font-size: 56px; font-weight: bold; ">{{main.title}}</h1>
+                <span style="font-size: 40px; font-style: italic; color: gainsboro;">{{main.displayLink}}</span>
+            </div>
+        </div>
+
+    </header>
+    <!-- Fixed size after header-->
+    <div class="content">
+        <!-- Scrollable div with main content -->
+        <div id="scrollable2">
+            <div class="container">
+
+                <div id="introduction-panel" class="hidden-xs hidden-sm" ng-show="!main.isPresentationMode">
+                    <div class="alert alert-info alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <p> CC98 Chat 是一个基于新版 CC98 API 实现的即时通讯平台。你可以通过 CC98 账户登录，然后和其他在线的用户互相发送短消息。请注意：在线消息不会进入任何人的论坛站内消息列表。因此如果对方没有在线，系统将无法送达你的消息。</p>
+                        <p class="text-muted">由于系统还在开发中，这个版本的 CC98 Chat 仅供预览，部分功能可能尚未实现或存在问题，由此给你带来的不便请你谅解。</p>
+                    </div>
+                </div>
+
+
+
+                <div class="view-container">
+                    <div ng-view=""></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Always at the end of the page -->
+    <footer>
+
+        <div style="position: absolute; bottom: 150px; vertical-align: bottom; opacity: 0.8; width: 100%;">
+            <div ng-repeat="error in main.errors" class="animate-listing tip-listing">
+                <div style="margin: auto; text-align: center;">
+                    <p style="margin: 3px auto 3px auto; padding: 3px; text-align: center;">
+                        <span style="background: black; color: white; padding: 5px; border-radius: 5px;">{{error}}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <p class="text-center">&copy; CC98 2015。保留所有权利。</p>
+    </footer>
+
+    <script type="text/javascript">
+        function closeHeader() {
+            $('header').hide();
+            $('.content').css('padding-top', 20);
+        }
+
+    </script>
+
+</body>
+</html>

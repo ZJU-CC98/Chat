@@ -21,7 +21,7 @@ class SystemMessageService {
      * 在系统中显示一条消息。
      * @param message 要显示的消息。
      */
-    public showMessage(message: string) {
+    showMessage(message: string) {
 
         // 在控制台输出消息
         console.log(Utility.stringFormat('准备显示消息: {0}', message));

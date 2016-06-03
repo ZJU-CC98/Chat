@@ -10,18 +10,20 @@ class CC98UserInfoService {
 
     private $rootScope: ng.IRootScopeService;
     private $http: ng.IHttpService;
+    private $apiUri: string;
 
     /**
      * 用户信息字典。
      */
-    private userDic: { [userName: string]: UserInfo };
+    private userDic: Dictionary<UserInfo> = {};
 
     /**
      * 构造一个对象的新实例。
      * @param $rootScope
      * @param $http
      */
-    public constructor($rootScope: ng.IRootScopeService, $http: ng.IHttpService) {
+    public constructor($apiUri: string, $rootScope: ng.IRootScopeService, $http: ng.IHttpService) {
+        this.$apiUri = $apiUri;
         this.$rootScope = $rootScope;
         this.$http = $http;
     }
@@ -37,7 +39,7 @@ class CC98UserInfoService {
         console.debug('正在尝试获取用户信息，用户名 = %s', userName);
 
         // 请求 URL
-        var url = Utility.stringFormat('https://api.cc98.org/user/name/{0}', encodeURIComponent(userName));
+        const url = Utility.combineUri(this.$apiUri, Utility.stringFormat('/user/name/{0}', encodeURIComponent(userName)));
 
         // 执行 HTTP 请求
         this.$http.get<UserInfo>(url).success(data => {
@@ -58,10 +60,10 @@ class CC98UserInfoService {
     /**
      * 从系统中检索用户信息。如果信息不存在，则从服务器端进行检索。
      */
-    public pickUserInfo(userName: string) {
+    pickUserInfo(userName: string) {
         console.debug('正在检索用户信息，用户名 = %s', userName);
         // 检索字典。
-        var item = this.userDic[userName];
+        let item = this.userDic[userName];
         // 如果项目存在，则直接返回
         if (item) {
             return item;

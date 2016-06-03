@@ -76,8 +76,7 @@ module CC98Chat {
 
         // 激活 HTML5 路径模式
         $locationProvider.html5Mode({
-            enabled: true,
-            requireBase: false
+            enabled: true
         });
 
         // 主页
@@ -100,17 +99,20 @@ module CC98Chat {
     config(configRoutes, '$routeProvider', '$locationProvider');
 
     // 基础路径
-    app.constant('$baseUri', 'http://v2.cc98.org/chat/');
+    app.constant('$siteUri', $('html').data('site-uri'));
+    app.constant('$apiUri', $('html').data('api-uri'));
+    app.constant('$logonUri', $('html').data('logon-uri'));
+
     // 注册客户端 ID
     app.constant('$cc98ClientId', '91b3ac76-0919-4fde-85d0-91ffde409a45');
     // 注册消息服务
     addService('$systemMessage', SystemMessageService, '$rootScope');
     // 注册 SignalR 服务
-    addService('$signalR', SignalRService, '$rootScope', '$cc98Authorization');
+    addService('$signalR', SignalRService, '$apiUri', '$rootScope', '$cc98Authorization');
     // 添加 CC98 用户信息服务
-    addService('$cc98UserInfo', CC98UserInfoService, '$rootScope', '$http');
+    addService('$cc98UserInfo', CC98UserInfoService, '$apiUri', '$rootScope', '$http');
     // 添加 CC98 用户认证服务
-    addService('$cc98Authorization', CC98AuthorizationService, '$baseUri', '$cc98ClientId', '$window', '$http', '$rootScope');
+    addService('$cc98Authorization', CC98AuthorizationService, '$siteUri','$logonUri', '$cc98ClientId', '$window', '$http', '$rootScope');
 
     // 主页控制器
     addController('MainController', MainController, '$rootScope', '$scope', '$timeout');

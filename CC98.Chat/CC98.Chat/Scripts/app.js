@@ -28,22 +28,24 @@ var AuthController = (function () {
     return AuthController;
 }());
 var CC98AuthorizationService = (function () {
-    function CC98AuthorizationService($baseUri, $cc98ClientId, $window, $http, $rootScope) {
+    function CC98AuthorizationService($siteUri, $logonUri, $cc98ClientId, $window, $http, $rootScope) {
         this.accessTokenKey = 'access_token';
         this.tokenTypeKey = 'type';
         this.isLoggedOnInternal = false;
         this.myInfoInternal = null;
         console.debug('正在构建 CC98 身份认证服务...');
-        this.$baseUri = $baseUri;
+        this.$siteUri = $siteUri;
+        this.$logonUri = $logonUri;
         this.$cc98ClientId = $cc98ClientId;
         this.$window = $window;
         this.$http = $http;
         this.$rootScope = $rootScope;
     }
     CC98AuthorizationService.prototype.buildOAuthRedirectUri = function (clientId, returnUrl) {
-        var redirectUri = Utility.combineUri(this.$baseUri, '/Auth');
+        var redirectUri = Utility.combineUri(this.$siteUri, '/Auth');
         var state = returnUrl;
-        return Utility.stringFormat('https://login.cc98.org/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
+        var authPath = Utility.stringFormat('/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
+        return Utility.combineUri(this.$logonUri, authPath);
     };
     Object.defineProperty(CC98AuthorizationService.prototype, "accessToken", {
         get: function () {
@@ -225,14 +227,16 @@ var ChatGroupInfo = (function () {
     return ChatGroupInfo;
 }());
 var CC98UserInfoService = (function () {
-    function CC98UserInfoService($rootScope, $http) {
+    function CC98UserInfoService($apiUri, $rootScope, $http) {
+        this.userDic = {};
+        this.$apiUri = $apiUri;
         this.$rootScope = $rootScope;
         this.$http = $http;
     }
     CC98UserInfoService.prototype.getUserInfoFromServer = function (userName) {
         var me = this;
         console.debug('正在尝试获取用户信息，用户名 = %s', userName);
-        var url = Utility.stringFormat('https://api.cc98.org/user/name/{0}', encodeURIComponent(userName));
+        var url = Utility.combineUri(this.$apiUri, Utility.stringFormat('/user/name/{0}', encodeURIComponent(userName)));
         this.$http.get(url).success(function (data) {
             console.debug('成功获取用户信息，用户名 = %s', userName);
             var item = me.userDic[userName];
@@ -261,10 +265,11 @@ var CC98UserInfoService = (function () {
     return CC98UserInfoService;
 }());
 var SignalRService = (function () {
-    function SignalRService($rootScope, $cc98Authorization) {
+    function SignalRService($apiUri, $rootScope, $cc98Authorization) {
         var _this = this;
         this.isConnectedInternal = false;
         console.debug('正在初始化 SignalR 服务 ...');
+        this.$apiUri = $apiUri;
         this.$rootScope = $rootScope;
         this.$cc98Authorizaion = $cc98Authorization;
         this.signalR = $.connection;
@@ -304,7 +309,7 @@ var SignalRService = (function () {
     ;
     SignalRService.prototype.initializeHub = function () {
         var _this = this;
-        this.signalR.hub.url = "https://api.cc98.org/signalR";
+        this.signalR.hub.url = Utility.combineUri(this.$apiUri, '/signalR');
         this.signalR.hub.disconnected(function () { return _this.handleDisconnnected(); });
     };
     SignalRService.prototype.start = function () {
@@ -437,12 +442,13 @@ var HomeController = (function () {
     return HomeController;
 }());
 var MainController = (function () {
-    function MainController($rootScope, $scope, $timeout) {
+    function MainController($siteUri, $rootScope, $scope, $timeout) {
         var _this = this;
         this.isPresentationMode = false;
         this.groupName = null;
         this.title = null;
         this.errors = new Array();
+        this.$siteUri = $siteUri;
         this.$rootScope = $rootScope;
         this.$scope = $scope;
         this.$timeout = $timeout;
@@ -459,6 +465,14 @@ var MainController = (function () {
         this.$scope.$apply('isPresentationMode');
         this.updateUI();
     };
+    Object.defineProperty(MainController.prototype, "displayLink", {
+        get: function () {
+            return Utility.combineUri(this
+                .$siteUri, Utility.stringFormat("/Group/{0}", encodeURIComponent(this.groupName)));
+        },
+        enumerable: true,
+        configurable: true
+    });
     MainController.prototype.updateUI = function () {
     };
     ;
@@ -792,8 +806,7 @@ var CC98Chat;
     function configRoutes($routeProvider, $locationProvider) {
         console.debug('正在配置应用程序路径 ...');
         $locationProvider.html5Mode({
-            enabled: true,
-            requireBase: false
+            enabled: true
         });
         $routeProvider.when('/Home', {
             templateUrl: 'home.html'
@@ -807,12 +820,14 @@ var CC98Chat;
         console.debug('路径配置完成 ...');
     }
     config(configRoutes, '$routeProvider', '$locationProvider');
-    app.constant('$baseUri', 'http://v2.cc98.org/chat/');
+    app.constant('$siteUri', $('html').data('site-uri'));
+    app.constant('$apiUri', $('html').data('api-uri'));
+    app.constant('$logonUri', $('html').data('logon-uri'));
     app.constant('$cc98ClientId', '91b3ac76-0919-4fde-85d0-91ffde409a45');
     addService('$systemMessage', SystemMessageService, '$rootScope');
-    addService('$signalR', SignalRService, '$rootScope', '$cc98Authorization');
-    addService('$cc98UserInfo', CC98UserInfoService, '$rootScope', '$http');
-    addService('$cc98Authorization', CC98AuthorizationService, '$baseUri', '$cc98ClientId', '$window', '$http', '$rootScope');
+    addService('$signalR', SignalRService, '$apiUri', '$rootScope', '$cc98Authorization');
+    addService('$cc98UserInfo', CC98UserInfoService, '$apiUri', '$rootScope', '$http');
+    addService('$cc98Authorization', CC98AuthorizationService, '$siteUri', '$logonUri', '$cc98ClientId', '$window', '$http', '$rootScope');
     addController('MainController', MainController, '$rootScope', '$scope', '$timeout');
     addController('HomeController', HomeController, '$scope', '$signalR', '$cc98Authorization');
     addController('AuthController', AuthController, '$rootScope', '$location', '$window', '$cc98Authorization');

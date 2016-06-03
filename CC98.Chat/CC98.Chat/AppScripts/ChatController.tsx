@@ -112,7 +112,7 @@ class ChatController {
      * 发送新消息。
      * @returns {}
      */
-    public sendNewMessage() {
+    sendNewMessage() {
 
         if (this.$signalR.isConnected) {
             // 发送消息

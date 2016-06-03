@@ -51,6 +51,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
@@ -60,6 +64,26 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.3\lib\net45\System.Web.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
@@ -80,12 +104,17 @@
       <DependentUpon>bootstrap.css</DependentUpon>
     </Content>
     <Content Include="Content\Presentation.css" />
+    <Content Include="Content\Presentation.min.css">
+      <DependentUpon>Presentation.css</DependentUpon>
+    </Content>
     <Content Include="Content\Site.css" />
+    <Content Include="Content\Site.min.css">
+      <DependentUpon>Site.css</DependentUpon>
+    </Content>
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="home.html" />
     <Content Include="Icon.png" />
     <Content Include="Images\logo.png" />
-    <Content Include="index.html" />
     <Content Include="packages.config" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -159,6 +188,23 @@
       <DependentUpon>angular.js</DependentUpon>
     </Content>
     <Content Include="Scripts\app.js" />
+    <Content Include="Scripts\app.min.js">
+      <DependentUpon>app.js</DependentUpon>
+    </Content>
+    <Content Include="Content\Presentation.min.css.map">
+      <DependentUpon>Presentation.min.css</DependentUpon>
+    </Content>
+    <Content Include="Content\Site.min.css.map">
+      <DependentUpon>Site.min.css</DependentUpon>
+    </Content>
+    <Content Include="Index.cshtml" />
+    <None Include="Properties\PublishProfiles\IIS.pubxml" />
+    <Content Include="Scripts\app.js.map">
+      <DependentUpon>app.js</DependentUpon>
+    </Content>
+    <Content Include="Scripts\app.min.js.map">
+      <DependentUpon>app.min.js</DependentUpon>
+    </Content>
     <Content Include="Scripts\errors.json" />
     <Content Include="Scripts\angular.min.js.map">
       <DependentUpon>angular.min.js</DependentUpon>
@@ -195,9 +241,6 @@
     </Content>
     <Content Include="Scripts\angular-animate.min.js.map">
       <DependentUpon>angular-animate.min.js</DependentUpon>
-    </Content>
-    <Content Include="Scripts\app.js.map">
-      <DependentUpon>app.js</DependentUpon>
     </Content>
     <None Include="Scripts\jquery-2.2.3.intellisense.js">
       <DependentUpon>jquery-2.2.3.js</DependentUpon>
@@ -1018,7 +1061,8 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <TypeScriptOutFile>scripts\app.js</TypeScriptOutFile>
-    <TypeScriptOutDir>d:\Users\guoyang\Source\Repos\CC98Chat\CC98.Chat\CC98.Chat\Scripts</TypeScriptOutDir>
+    <TypeScriptOutDir>
+    </TypeScriptOutDir>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
     <TypeScriptRemoveComments>True</TypeScriptRemoveComments>
@@ -1094,6 +1138,11 @@
     <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.1.2.2\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.1.2.2\build\Microsoft.Net.Compilers.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>"C:\Program Files (x86)\Microsoft\Microsoft Ajax Minifier\AjaxMin.exe" -js "$(ProjectDir)scripts\app.js" -out  "$(ProjectDir)scripts\app.min.js" -map:v3 "$(ProjectDir)scripts\app.min.js.map"
+"C:\Program Files (x86)\Microsoft\Microsoft Ajax Minifier\AjaxMin.exe" -css "$(ProjectDir)Content\Site.css" -out  "$(ProjectDir)Content\Site.min.css" -map:v3 "$(ProjectDir)Content\Site.min.css.map"
+"C:\Program Files (x86)\Microsoft\Microsoft Ajax Minifier\AjaxMin.exe" -css "$(ProjectDir)Content\Presentation.css" -out  "$(ProjectDir)Content\Presentation.min.css" -map:v3 "$(ProjectDir)Content\Presentation.min.css.map"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

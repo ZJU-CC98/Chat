@@ -11,6 +11,7 @@ class MainController {
     private $rootScope: ng.IRootScopeService;
     private $scope: ng.IScope;
     private $timeout: ng.ITimeoutService;
+    private $siteUri: string;
 
     /**
      * 是否处于演示模式。
@@ -30,8 +31,9 @@ class MainController {
      */
     private errors: string[] = new Array();
 
-    public constructor($rootScope, $scope, $timeout) {
+    public constructor($siteUri, $rootScope, $scope, $timeout) {
 
+        this.$siteUri = $siteUri;
         this.$rootScope = $rootScope;
         this.$scope = $scope;
         this.$timeout = $timeout;
@@ -55,6 +57,16 @@ class MainController {
         this.isPresentationMode = isPresentationMode;
         this.$scope.$apply('isPresentationMode');
         this.updateUI();
+    }
+
+    /**
+     * 获取该演示组的显示连接。
+     * @returns {string} 演示组的显示连接地址。
+     */
+    get displayLink() {
+        return Utility.combineUri(this
+            .$siteUri,
+            Utility.stringFormat("/Group/{0}", encodeURIComponent(this.groupName)));
     }
 
     /**

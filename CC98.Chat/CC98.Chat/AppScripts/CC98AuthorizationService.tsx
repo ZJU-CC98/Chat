@@ -33,17 +33,19 @@ class CC98AuthorizationService {
      */
     private tokenTypeInternal: string;
 
-    private $baseUri: string;
+    private $siteUri: string;
+    private $logonUri: string;
     private $cc98ClientId: string;
     private $window: ng.IWindowService;
     private $http: ng.IHttpService;
     private $rootScope: ng.IRootScopeService;
 
-    public constructor($baseUri: string, $cc98ClientId: string, $window: ng.IWindowService, $http: ng.IHttpService, $rootScope: ng.IRootScopeService) {
+    public constructor($siteUri: string, $logonUri: string, $cc98ClientId: string, $window: ng.IWindowService, $http: ng.IHttpService, $rootScope: ng.IRootScopeService) {
 
         console.debug('正在构建 CC98 身份认证服务...');
 
-        this.$baseUri = $baseUri;
+        this.$siteUri = $siteUri;
+        this.$logonUri = $logonUri;
         this.$cc98ClientId = $cc98ClientId;
         this.$window = $window;
         this.$http = $http;
@@ -59,10 +61,11 @@ class CC98AuthorizationService {
     private buildOAuthRedirectUri(clientId, returnUrl) {
         // 重定向地址
         // TODO: 修改为实际地址
-        var redirectUri = Utility.combineUri(this.$baseUri, '/Auth');
+        var redirectUri = Utility.combineUri(this.$siteUri, '/Auth');
         // 将实际地址保存入 state
         var state = returnUrl;
-        return Utility.stringFormat('https://login.cc98.org/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
+        var authPath = Utility.stringFormat('/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
+        return Utility.combineUri(this.$logonUri, authPath);
     }
 
     /**
@@ -157,7 +160,7 @@ class CC98AuthorizationService {
      * @param tokenType 令牌类型。
      * @returns {}
      */
-    public trySetTokenInfo(accessToken: string, tokenType: string) {
+    trySetTokenInfo(accessToken: string, tokenType: string) {
         console.debug('正在设置用户令牌 ...');
         this.accessTokenInternal = accessToken;
         this.tokenTypeInternal = tokenType;
@@ -183,7 +186,7 @@ class CC98AuthorizationService {
      * 如果可能则执行自动登录。
      * @returns {boolean} 是否可以自动登录。
      */
-    public tryAutoLogOn() {
+    tryAutoLogOn() {
         console.debug('正在尝试自动登录 ...');
         // 如果加载令牌失败则自动返回
         if (!this.loadTokenFromStorage()) {
@@ -199,7 +202,7 @@ class CC98AuthorizationService {
      * 执行显式登录操作。
      * @param returnUrl 登录后要返回的地址。
      */
-    public logOn(returnUrl) {
+    logOn(returnUrl) {
         // 执行重定向操作
         this.$window.location.href = this.buildOAuthRedirectUri(this.$cc98ClientId, returnUrl);
     }
@@ -207,7 +210,7 @@ class CC98AuthorizationService {
     /**
      *  执行注销操作。
      */
-    public logOff() {
+    logOff() {
         this.isLoggedOnInternal = false;
         this.myInfoInternal = null;
     };
