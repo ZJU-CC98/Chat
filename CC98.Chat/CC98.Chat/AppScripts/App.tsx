@@ -112,10 +112,10 @@ module CC98Chat {
     // 添加 CC98 用户信息服务
     addService('$cc98UserInfo', CC98UserInfoService, '$apiUri', '$rootScope', '$http');
     // 添加 CC98 用户认证服务
-    addService('$cc98Authorization', CC98AuthorizationService, '$siteUri','$logonUri', '$cc98ClientId', '$window', '$http', '$rootScope');
+    addService('$cc98Authorization', CC98AuthorizationService, '$siteUri', '$logonUri', '$apiUri', '$cc98ClientId', '$window', '$http', '$rootScope');
 
     // 主页控制器
-    addController('MainController', MainController, '$rootScope', '$scope', '$timeout');
+    addController('MainController', MainController,'$siteUri', '$rootScope', '$scope', '$timeout');
     // 实际主页控制器
     addController('HomeController', HomeController, '$scope', '$signalR', '$cc98Authorization');
     // 授权控制器

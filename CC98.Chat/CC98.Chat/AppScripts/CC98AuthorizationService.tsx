@@ -35,17 +35,19 @@ class CC98AuthorizationService {
 
     private $siteUri: string;
     private $logonUri: string;
+    private $apiUri: string;
     private $cc98ClientId: string;
     private $window: ng.IWindowService;
     private $http: ng.IHttpService;
     private $rootScope: ng.IRootScopeService;
 
-    public constructor($siteUri: string, $logonUri: string, $cc98ClientId: string, $window: ng.IWindowService, $http: ng.IHttpService, $rootScope: ng.IRootScopeService) {
+    public constructor($siteUri: string, $logonUri: string, $apiUri: string, $cc98ClientId: string, $window: ng.IWindowService, $http: ng.IHttpService, $rootScope: ng.IRootScopeService) {
 
         console.debug('正在构建 CC98 身份认证服务...');
 
         this.$siteUri = $siteUri;
         this.$logonUri = $logonUri;
+        this.$apiUri = $apiUri;
         this.$cc98ClientId = $cc98ClientId;
         this.$window = $window;
         this.$http = $http;
@@ -61,10 +63,10 @@ class CC98AuthorizationService {
     private buildOAuthRedirectUri(clientId, returnUrl) {
         // 重定向地址
         // TODO: 修改为实际地址
-        var redirectUri = Utility.combineUri(this.$siteUri, '/Auth');
+        const redirectUri = Utility.combineUri(this.$siteUri, '/Auth');
         // 将实际地址保存入 state
-        var state = returnUrl;
-        var authPath = Utility.stringFormat('/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
+        const state = returnUrl;
+        const authPath = Utility.stringFormat('/OAuth/Authorize?response_type=token&scope=getmessage* setmessage*&client_id={0}&redirect_uri={1}&state={2}', encodeURIComponent(clientId), encodeURIComponent(redirectUri), encodeURIComponent(state));
         return Utility.combineUri(this.$logonUri, authPath);
     }
 
@@ -135,13 +137,13 @@ class CC98AuthorizationService {
         var me = this;
         console.debug('try loading user info from token...');
         // 配置标头
-        var requsetConfig = {
+        const requsetConfig = {
             headers: {
                 'Authorization': Utility.stringFormat('{0} {1}', this.tokenTypeInternal, this.accessTokenInternal)
             }
         };
         // 发送 get 请求
-        this.$http.get('https://api.cc98.org/Me/Basic', requsetConfig).success((data, status, headers, config) => {
+        this.$http.get(Utility.combineUri(this.$apiUri, '/Me/Basic'), requsetConfig).success((data, status, headers, config) => {
             me.isLoggedOnInternal = true;
             me.myInfoInternal = data;
             // 将凭据写入存储区
@@ -173,10 +175,10 @@ class CC98AuthorizationService {
      */
     private handleCallback() {
 
-        var params = {};
+        const params = {};
         // 关键数据
-        var accessToken = params[this.accessTokenKey];
-        var tokenType = params[this.tokenTypeKey];
+        const accessToken = params[this.accessTokenKey];
+        const tokenType = params[this.tokenTypeKey];
         // 本地存储区
         this.$window.localStorage[this.accessTokenKey] = accessToken;
         this.$window.localStorage[this.tokenTypeKey] = tokenType;

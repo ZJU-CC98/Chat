@@ -223,6 +223,12 @@ class ChatController {
 
             // 插入数据并推送通知
             this.messages.push(newMessage);
+
+            // 防止溢出
+            if (this.messages.length > 1000) {
+                this.messages.shift();
+            }
+
             this.$scope.$apply('messages');
         }
     };
@@ -257,7 +263,7 @@ class ChatController {
         // TODO: 增强性能
         var data = '';
         $.each(this.messages, (index, value) => {
-            var item = Utility.stringFormat('作者：{0}\r\n时间：{1}\r\n内容：{2}\r\n\r\n', value.time, value.user.name, value.content);
+            var item = Utility.stringFormat('时间：{0}\r\n作者：{1}\r\n内容：{2}\r\n\r\n', value.time, value.user.name, value.content);
             data += item;
         });
         return data;

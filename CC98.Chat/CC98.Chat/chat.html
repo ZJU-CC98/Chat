@@ -137,7 +137,7 @@
 					</div>
 				</div>
 				<div class="hidden-md hidden-lg">
-					<textarea rows="3" placeholder="对大家说些什么吧" ng-model="chat.newMessage" required="required" class="form-control"></textarea>
+					<textarea id="input-text" rows="3" placeholder="对大家说些什么吧" ng-model="chat.newMessage" required="required" class="form-control"></textarea>
 				</div>
 
 				<hr />
@@ -198,6 +198,7 @@
 
 	$(document).ready(function () {
 
+        // 绑定 Ctrl+Enter 快捷输入
 		$('#input-text').keydown(function (e) {
 			if (e.which === 13 && e.ctrlKey) {
 				$('#send-button').click();

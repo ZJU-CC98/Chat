@@ -70,7 +70,9 @@ var SignalRService = (function () {
     SignalRService.prototype.initializeHub = function () {
         var _this = this;
         // API 地址
-        this.signalR.hub.url = Utility.combineUri(this.$apiUri, '/signalR');
+        var realUrl = Utility.combineUri(this.$apiUri, '/signalR');
+        console.debug('正在配置 SignalR，地址 = %s', realUrl);
+        this.signalR.hub.url = realUrl;
         // 绑定断开事件
         this.signalR.hub.disconnected(function () { return _this.handleDisconnnected(); });
     };
@@ -86,6 +88,7 @@ var SignalRService = (function () {
         // 设置用户凭据
         this.setUserAuthorization();
         // 启动连接
+        $.connection.hub.logging = true;
         $.connection.hub.start().done(function () {
             console.debug('已经连接到服务器。');
             _this.isConnectedInternal = true;

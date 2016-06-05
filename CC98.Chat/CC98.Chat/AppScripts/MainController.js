@@ -51,8 +51,7 @@ var MainController = (function () {
          * @returns {string} 演示组的显示连接地址。
          */
         get: function () {
-            return Utility.combineUri(this
-                .$siteUri, Utility.stringFormat("/Group/{0}", encodeURIComponent(this.groupName)));
+            return Utility.combineUri(this.$siteUri, Utility.stringFormat('/Group/{0}', encodeURIComponent(this.groupName)));
         },
         enumerable: true,
         configurable: true

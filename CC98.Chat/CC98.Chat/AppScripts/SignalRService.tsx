@@ -78,7 +78,9 @@ class SignalRService {
      */
     private initializeHub() {
         // API 地址
-        this.signalR.hub.url = Utility.combineUri(this.$apiUri, '/signalR');
+        var realUrl = Utility.combineUri(this.$apiUri, '/signalR');
+        console.debug('正在配置 SignalR，地址 = %s', realUrl);
+        this.signalR.hub.url = realUrl;
         // 绑定断开事件
         this.signalR.hub.disconnected(() => this.handleDisconnnected());
     }
@@ -97,6 +99,7 @@ class SignalRService {
         this.setUserAuthorization();
 
         // 启动连接
+        $.connection.hub.logging = true;
         $.connection.hub.start().done(() => {
             console.debug('已经连接到服务器。');
             this.isConnectedInternal = true;

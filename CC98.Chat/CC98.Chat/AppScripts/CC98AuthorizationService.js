@@ -5,7 +5,7 @@
  * 提供 CC98 授权验证服务。
  */
 var CC98AuthorizationService = (function () {
-    function CC98AuthorizationService($siteUri, $logonUri, $cc98ClientId, $window, $http, $rootScope) {
+    function CC98AuthorizationService($siteUri, $logonUri, $apiUri, $cc98ClientId, $window, $http, $rootScope) {
         /**
          * 访问令牌的数据键。
          */
@@ -25,6 +25,7 @@ var CC98AuthorizationService = (function () {
         console.debug('正在构建 CC98 身份认证服务...');
         this.$siteUri = $siteUri;
         this.$logonUri = $logonUri;
+        this.$apiUri = $apiUri;
         this.$cc98ClientId = $cc98ClientId;
         this.$window = $window;
         this.$http = $http;
@@ -126,7 +127,7 @@ var CC98AuthorizationService = (function () {
             }
         };
         // 发送 get 请求
-        this.$http.get('https://api.cc98.org/Me/Basic', requsetConfig).success(function (data, status, headers, config) {
+        this.$http.get(Utility.combineUri(this.$apiUri, '/Me/Basic'), requsetConfig).success(function (data, status, headers, config) {
             me.isLoggedOnInternal = true;
             me.myInfoInternal = data;
             // 将凭据写入存储区
