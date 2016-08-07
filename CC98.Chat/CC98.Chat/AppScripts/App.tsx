@@ -15,6 +15,7 @@
 /// <reference path="HomeController.tsx"/>
 /// <reference path="MainController.tsx"/>
 /// <reference path="ChatController.tsx"/>
+/// <reference path="AuthController.tsx"/>
 /// <reference path="ChatGroupController.tsx"/>
 module CC98Chat {
 
@@ -98,6 +99,8 @@ module CC98Chat {
     // 配置应用程序路由
     config(configRoutes, '$routeProvider', '$locationProvider');
 
+	app.filter('encodeURIComponent', ['$window', $window => $window.encodeURIComponent]);
+
     // 基础路径
     app.constant('$siteUri', $('html').data('site-uri'));
     app.constant('$apiUri', $('html').data('api-uri'));
@@ -115,7 +118,7 @@ module CC98Chat {
     addService('$cc98Authorization', CC98AuthorizationService, '$siteUri', '$logonUri', '$apiUri', '$cc98ClientId', '$window', '$http', '$rootScope');
 
     // 主页控制器
-    addController('MainController', MainController,'$siteUri', '$rootScope', '$scope', '$timeout');
+    addController('MainController', MainController, '$siteUri', '$rootScope', '$scope', '$timeout');
     // 实际主页控制器
     addController('HomeController', HomeController, '$scope', '$signalR', '$cc98Authorization');
     // 授权控制器

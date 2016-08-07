@@ -826,6 +826,7 @@ var CC98Chat;
         console.debug('路径配置完成 ...');
     }
     config(configRoutes, '$routeProvider', '$locationProvider');
+    app.filter('encodeURIComponent', ['$window', function ($window) { return $window.encodeURIComponent; }]);
     app.constant('$siteUri', $('html').data('site-uri'));
     app.constant('$apiUri', $('html').data('api-uri'));
     app.constant('$logonUri', $('html').data('logon-uri'));

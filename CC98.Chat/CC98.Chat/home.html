@@ -18,7 +18,7 @@
 
 				<tr ng-repeat="group in home.groups" class="animate-listing group-listing">
 					<th>
-						<a ng-href="Group/{{group.name}}" target="_blank">{{home.getDisplayTitle(group)}}</a>
+						<a ng-href="Group/{{group.name | encodeURIComponent}}" target="_blank">{{home.getDisplayTitle(group)}}</a>
 					</th>
 					<td>
 						<a ng-href="http://www.cc98.org/dispuser.asp?name={{group.managerName}}" target="_blank">{{group.managerName}}</a>
